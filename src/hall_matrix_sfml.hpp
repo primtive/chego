@@ -1,3 +1,4 @@
+#pragma once
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <vector>
@@ -13,7 +14,7 @@ class SFMLHallMatrix
     sf::RenderWindow window;
 
 public:
-    std::vector<std::vector<bool>> hallMatrix;
+    std::vector<std::vector<bool>> matrixState;
 
     SFMLHallMatrix();
 
@@ -42,9 +43,23 @@ SFMLHallMatrix::SFMLHallMatrix()
         sf::VideoMode({HALL_WINDOW_SIZE, HALL_WINDOW_SIZE}),
         "Debug panel",
         sf::Style::Close);
-    hallMatrix = std::vector<std::vector<bool>>(
+    matrixState = std::vector<std::vector<bool>>(
         HALL_MATRIX_SIZE,
         std::vector<bool>(HALL_MATRIX_SIZE));
+    for (int y = 0; y < HALL_MATRIX_SIZE; ++y)
+    {
+        for (int x = 0; x < HALL_MATRIX_SIZE; ++x)
+        {
+            if (y < 2 || y > 5)
+            {
+                matrixState[y][x] = true; // Изначально датчики в этих строках включены
+            }
+            else
+            {
+                matrixState[y][x] = false; // Изначально датчики в этих строках выключены
+            }
+        }
+    }
 }
 
 void SFMLHallMatrix::poll()
@@ -76,8 +91,8 @@ void SFMLHallMatrix::poll()
                     if (x < HALL_MATRIX_SIZE && y < HALL_MATRIX_SIZE)
                     {
                         // Переключение состояния светодиода
-                        hallMatrix[y][x] = !hallMatrix[y][x];
-                        triggerSensor(x, y, hallMatrix[y][x]);
+                        matrixState[y][x] = !matrixState[y][x];
+                        triggerSensor(x, y, matrixState[y][x]);
                     }
                 }
             }
@@ -94,9 +109,29 @@ void SFMLHallMatrix::poll()
 
             sf::RectangleShape cell(sf::Vector2f(HALL_PIXEL_SIZE, HALL_PIXEL_SIZE));
             cell.setPosition({static_cast<float>(x), static_cast<float>(y)});
-            cell.setFillColor(hallMatrix[blockY][blockX] ? sf::Color::White : sf::Color::Black);
+            cell.setFillColor(matrixState[blockY][blockX] ? sf::Color::White : sf::Color::Black);
             window.draw(cell);
         }
+    }
+    for (int i = 0; i < HALL_MATRIX_SIZE; ++i)
+    {
+        // ranks
+        sf::Font font("resources/arial.ttf");
+        sf::Text text(font);
+        text.setString((char)(i + 'a'));
+        text.setCharacterSize(20);
+        text.setFillColor(sf::Color::Red);
+        text.setPosition({static_cast<float>(i * (HALL_PIXEL_SIZE + HALL_SPACING) + HALL_PIXEL_SIZE / 2),
+                          0.0f});
+        window.draw(text);
+
+        // files
+        text.setString(std::to_string(i + 1));
+        text.setCharacterSize(20);
+        text.setFillColor(sf::Color::Red);
+        text.setPosition({0.0f,
+                          static_cast<float>(i * (HALL_PIXEL_SIZE + HALL_SPACING) + HALL_PIXEL_SIZE / 2)});
+        window.draw(text);
     }
     window.display();
 }

@@ -41,7 +41,7 @@ SFMLMatrix::SFMLMatrix()
         MATRIX_SIZE,
         std::vector<sf::Color>(MATRIX_SIZE));
 
-    fill(Color::Black); 
+    fill(Color::Black);
 
     draw();
 }
@@ -81,6 +81,27 @@ void SFMLMatrix::draw()
                 }
             }
         }
+    }
+
+    for (int i = 0; i < MATRIX_SIZE / CELL_SIZE; ++i)
+    {
+        // ranks
+        sf::Font font("resources/arial.ttf");
+        sf::Text text(font);
+        text.setString((char)(i + 'a'));
+        text.setCharacterSize(20);
+        text.setFillColor(sf::Color::Red);
+        text.setPosition({static_cast<float>(i * (PIXEL_SIZE * CELL_SIZE + SPACING) + PIXEL_SIZE / 2),
+                          0.0f});
+        window.draw(text);
+
+        // files
+        text.setString(std::to_string(i + 1));
+        text.setCharacterSize(20);
+        text.setFillColor(sf::Color::Red);
+        text.setPosition({0.0f,
+                          static_cast<float>(i * (PIXEL_SIZE * CELL_SIZE + SPACING) + PIXEL_SIZE / 2)});
+        window.draw(text);
     }
     window.display();
 }

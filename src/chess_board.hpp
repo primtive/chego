@@ -1,5 +1,6 @@
 #pragma once
 #include "matrix.hpp"
+#include "chess.hpp"
 
 class ChessBoard
 {
@@ -11,8 +12,10 @@ public:
     void displayWithAnim();
     void draw() { matrix.draw(); }
 
-    void setCell(uint8_t x, uint8_t y); // Clear cell
-    void setCell(uint8_t x, uint8_t y, Color color);
+    void setCell(chess::Square square); // Clear cell
+    void setCell(chess::Square square, Color color);
+    void setCell(u_int8_t x, u_int8_t y); // Clear cell
+    void setCell(u_int8_t x, u_int8_t y, Color color);
 };
 
 ChessBoard::ChessBoard(IMatrix &matrix) : matrix(matrix)
@@ -72,19 +75,23 @@ void ChessBoard::displayWithAnim()
     }
 }
 
-void ChessBoard::setCell(uint8_t x, uint8_t y)
+void ChessBoard::setCell(chess::Square square)
 {
-    const Color color = (x + y) % 2 == 0 ? Color::White : Color::Black;
-    for (uint8_t inX = 0; inX < CELL_SIZE; ++inX)
-    {
-        for (uint8_t inY = 0; inY < CELL_SIZE; ++inY)
-        {
-            matrix.setCellColor(x * CELL_SIZE + inX, y * CELL_SIZE + inY, color);
-        }
-    }
+    setCell(static_cast<uint8_t>(square.file()), static_cast<uint8_t>(square.rank()));
 }
 
-void ChessBoard::setCell(uint8_t x, uint8_t y, Color color)
+void ChessBoard::setCell(chess::Square square, Color color)
+{
+    setCell(static_cast<uint8_t>(square.file()), static_cast<uint8_t>(square.rank()), color);
+}
+
+void ChessBoard::setCell(u_int8_t x, u_int8_t y)
+{
+    const Color color = (x + y) % 2 == 0 ? Color::White : Color::Black;
+    setCell(x, y, color);
+}
+
+void ChessBoard::setCell(u_int8_t x, u_int8_t y, Color color)
 {
     for (uint8_t inX = 0; inX < CELL_SIZE; ++inX)
     {

@@ -10,7 +10,10 @@ public:
     static const Color Black;
     static const Color Go; // Wheat color for Go board
     static const Color Red;
-    static const Color Green; 
+    static const Color Green;
+    static const Color Blue;
+    static const Color Orange;
+    static const Color Purple;
 };
 
 const Color Color::White(255, 255, 255);
@@ -18,3 +21,6 @@ const Color Color::Black(0, 0, 0);
 const Color Color::Go(245, 222, 179); // Wheat color for Go
 const Color Color::Red(255, 0, 0);
 const Color Color::Green(0, 255, 0); // Green color for highlighting
+const Color Color::Blue(0, 0, 255);  // Blue color for highlighting
+const Color Color::Orange(255, 165, 0);
+const Color Color::Purple(128, 0, 128); // Purple color for highlighting
