@@ -19,7 +19,8 @@ class Controller
     }
 
 public:
-    Menu menu;
+    // Menu menu;
+    std::unique_ptr<Menu> menu;
     std::unique_ptr<SFMLSensors> sensors;
     std::unique_ptr<SFMLMatrix> matrix;
     std::unique_ptr<ChessBoard> chessboard;
@@ -34,6 +35,9 @@ public:
             std::cout << "created chessboard" << std::endl;
             sensors = std::make_unique<SFMLSensors>(8);
             matrix = std::make_unique<SFMLMatrix>(16);
+
+            setenv("SDL_VIDEODRIVER", "wayland", 1);
+            menu = std::make_unique<Menu>();
 
             chessboard = std::make_unique<ChessBoard>(*matrix);
             chessboard->display();
