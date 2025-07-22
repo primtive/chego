@@ -9,42 +9,37 @@
 
 using namespace std::chrono_literals;
 
-const int PIXEL_SIZE = 28; // Размер одного LED
-const int SPACING = 2;     // Промежуток между блоками
-const int WINDOW_SIZE = (MATRIX_SIZE / CELL_SIZE) * (PIXEL_SIZE * CELL_SIZE + SPACING) - SPACING;
-const Color bgColor(15, 15, 25);
-
 class SFMLMatrix : public IMatrix
 {
-    sf::RenderWindow window;
-    std::vector<std::vector<sf::Color>> ledMatrix;
-
 private:
+    leds_t leds;
+    static const int PIXEL_SIZE = 28; // Размер одного LED
+    static const int SPACING = 2;     // Промежуток между блоками
+    static const int CELL_SIZE = 2;
+    static const Color bgColor;
+
 public:
-    SFMLMatrix();
+    sf::RenderWindow window;
+
+    SFMLMatrix(uint8_t size) : IMatrix(size)
+    {
+        uint16_t window_size = (size / CELL_SIZE) * (PIXEL_SIZE * CELL_SIZE + SPACING) - SPACING;
+        window = sf::RenderWindow(
+            sf::VideoMode({window_size, window_size}),
+            "LED Matrix",
+            sf::Style::Close);
+        leds = leds_t(size, std::vector<Color>(size));
+
+        fill(Color::Black);
+        draw();
+    }
 
     void setCellColor(uint8_t x, uint8_t y, Color color);
     void draw();
     void fill(Color color);
 
     void poll();
-    bool isWindowOpen();
 };
-
-SFMLMatrix::SFMLMatrix()
-{
-    window = sf::RenderWindow(
-        sf::VideoMode({WINDOW_SIZE, WINDOW_SIZE}),
-        "LED Matrix 16x16",
-        sf::Style::Close);
-    ledMatrix = std::vector<std::vector<sf::Color>>(
-        MATRIX_SIZE,
-        std::vector<sf::Color>(MATRIX_SIZE));
-
-    fill(Color::Black);
-
-    draw();
-}
 
 void SFMLMatrix::draw()
 {
@@ -53,9 +48,9 @@ void SFMLMatrix::draw()
     window.clear(sf::Color(bgColor.r, bgColor.g, bgColor.b));
 
     // Рисование блоков 2x2 без внутренних разделителей
-    for (int blockY = 0; blockY < MATRIX_SIZE / CELL_SIZE; ++blockY)
+    for (int blockY = 0; blockY < size / CELL_SIZE; ++blockY)
     {
-        for (int blockX = 0; blockX < MATRIX_SIZE / CELL_SIZE; ++blockX)
+        for (int blockX = 0; blockX < size / CELL_SIZE; ++blockX)
         {
             // Позиция блока
             int blockPosX = blockX * (CELL_SIZE * PIXEL_SIZE + SPACING);
@@ -73,7 +68,7 @@ void SFMLMatrix::draw()
                     led.setPosition(sf::Vector2f(
                         blockPosX + inX * PIXEL_SIZE,
                         blockPosY + inY * PIXEL_SIZE));
-                    led.setFillColor(ledMatrix[y][x]);
+                    led.setFillColor(leds[y][x].toSFMLColor());
 
                     // Скругление углов
                     led.setOutlineThickness(0);
@@ -83,7 +78,7 @@ void SFMLMatrix::draw()
         }
     }
 
-    for (int i = 0; i < MATRIX_SIZE / CELL_SIZE; ++i)
+    for (int i = 0; i < size / CELL_SIZE; ++i)
     {
         // ranks
         sf::Font font("resources/arial.ttf");
@@ -108,14 +103,14 @@ void SFMLMatrix::draw()
 
 void SFMLMatrix::setCellColor(uint8_t x, uint8_t y, Color color)
 {
-    ledMatrix[y][x] = sf::Color(color.r, color.g, color.b);
+    leds[y][x] = color;
 }
 
 void SFMLMatrix::fill(Color color)
 {
-    for (uint8_t x = 0; x < MATRIX_SIZE; ++x)
+    for (uint8_t x = 0; x < size; ++x)
     {
-        for (uint8_t y = 0; y < MATRIX_SIZE; ++y)
+        for (uint8_t y = 0; y < size; ++y)
         {
             setCellColor(x, y, color);
         }
@@ -144,8 +139,8 @@ void SFMLMatrix::poll()
                 int inBlockX = (mouseX - blockX * (CELL_SIZE * PIXEL_SIZE + SPACING)) / PIXEL_SIZE;
                 int inBlockY = (mouseY - blockY * (CELL_SIZE * PIXEL_SIZE + SPACING)) / PIXEL_SIZE;
 
-                if (blockX < MATRIX_SIZE / CELL_SIZE &&
-                    blockY < MATRIX_SIZE / CELL_SIZE &&
+                if (blockX < size / CELL_SIZE &&
+                    blockY < size / CELL_SIZE &&
                     inBlockX < CELL_SIZE &&
                     inBlockY < CELL_SIZE)
                 {
@@ -153,7 +148,7 @@ void SFMLMatrix::poll()
                     int x = blockX * CELL_SIZE + inBlockX;
                     int y = blockY * CELL_SIZE + inBlockY;
 
-                    if (x < MATRIX_SIZE && y < MATRIX_SIZE)
+                    if (x < size && y < size)
                     {
                         // Переключение состояния светодиода
                         setCellColor(x, y, Color::White);
@@ -165,7 +160,4 @@ void SFMLMatrix::poll()
     }
 }
 
-bool SFMLMatrix::isWindowOpen()
-{
-    return window.isOpen();
-}
+const Color SFMLMatrix::bgColor = Color(15, 15, 25);

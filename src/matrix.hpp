@@ -1,24 +1,32 @@
 #pragma once
 #include "color.hpp"
 
-const int MATRIX_SIZE = 16; // Размер матрицы 16x16
-const int CELL_SIZE = 2;    // Размер клетки 2x2
-const float MATRIX_CENTER = (MATRIX_SIZE - 1) / 2.0;
-
+using leds_t = std::vector<std::vector<Color>>;
 
 class IMatrix
 {
+protected:
 public:
+    uint8_t size;
+    float center;
+
+    IMatrix(uint8_t size) : size(size),
+                            center((size - 1) / 2.0f) {}
     virtual ~IMatrix() = default;
 
-    // Управление клетками
     virtual void setCellColor(uint8_t x, uint8_t y, Color color) = 0;
     virtual void fill(Color color) = 0;
-    // virtual Color getCellColor(uint8_t x, uint8_t y) = 0;
 
     virtual void draw() = 0;
-    // Управление состоянием матрицы
-    // virtual void enable() = 0;
-    // virtual void disable() = 0;
-    // virtual bool isEnabled() const = 0;
+
+    void drawWithAnim(leds_t leds)
+    {
+        for (uint8_t x = 0; x < size; x++)
+        {
+            for (uint8_t y = 0; y < size; y++)
+            {
+                setCellColor(x, y, leds[y][x]);
+            }
+        }
+    }
 };

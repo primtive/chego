@@ -2,7 +2,7 @@
 #include "chess_board.hpp"
 #include "game.hpp"
 #include "chess.hpp"
-#include "hall_handler.hpp"
+#include "sensors_handler.hpp"
 #include "engine.hpp"
 
 enum class PlayerType
@@ -11,12 +11,12 @@ enum class PlayerType
     ENGINE
 };
 
-class ChessGame : public IGame, public IHallHandler
+class ChessGame : public IGame, public ISensorsHandler
 {
 private:
     ChessBoard &board;
     chess::Board game;
-    std::vector<std::vector<bool>> &hallMatrixState;
+    sensors_t &hallMatrixState;
     PlayerType whitePlayerType;
     PlayerType blackPlayerType;
     Engine &engine;
@@ -288,9 +288,9 @@ public:
     {
         board.display();
         bool isOk = true;
-        for (uint8_t x = 0; x < HALL_MATRIX_SIZE; ++x)
+        for (uint8_t x = 0; x < hallMatrixState.size(); ++x)
         {
-            for (uint8_t y = 0; y < HALL_MATRIX_SIZE; ++y)
+            for (uint8_t y = 0; y < hallMatrixState.size(); ++y)
             {
                 if (y < 2 || y > 5)
                 {
@@ -360,9 +360,9 @@ public:
     }
     void highlightPieces()
     {
-        for (uint8_t x = 0; x < HALL_MATRIX_SIZE; ++x)
+        for (uint8_t x = 0; x < hallMatrixState.size(); ++x)
         {
-            for (uint8_t y = 0; y < HALL_MATRIX_SIZE; ++y)
+            for (uint8_t y = 0; y < hallMatrixState.size(); ++y)
             {
                 chess::Square square = chess::Square(static_cast<chess::File>(x), static_cast<chess::Rank>(y));
                 chess::PieceType pieceType = game.at<chess::PieceType>(square);

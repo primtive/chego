@@ -5,6 +5,7 @@
 class ChessBoard
 {
     IMatrix &matrix;
+    static const uint8_t CELL_SIZE = 2;
 
 public:
     ChessBoard(IMatrix &matrix);
@@ -24,9 +25,9 @@ ChessBoard::ChessBoard(IMatrix &matrix) : matrix(matrix)
 
 void ChessBoard::display()
 {
-    for (uint8_t x = 0; x < MATRIX_SIZE; ++x)
+    for (uint8_t x = 0; x < matrix.size; ++x)
     {
-        for (uint8_t y = 0; y < MATRIX_SIZE; ++y)
+        for (uint8_t y = 0; y < matrix.size; ++y)
         {
             if ((x / 2 + y / 2) % 2 == 0)
             {
@@ -42,16 +43,16 @@ void ChessBoard::display()
 
 void ChessBoard::displayWithAnim()
 {
-    for (float r = 0; r <= MATRIX_SIZE; r += 0.3)
+    for (float r = 0; r <= matrix.size; r += 0.3)
     {
 
         // Обход всех светодиодов
-        for (int y = 0; y < MATRIX_SIZE; y++)
+        for (int y = 0; y < matrix.size; y++)
         {
-            for (int x = 0; x < MATRIX_SIZE; x++)
+            for (int x = 0; x < matrix.size; x++)
             {
                 // Расчет расстояния от центра
-                float distance = sqrt(pow(x - MATRIX_CENTER, 2) + pow(y - MATRIX_CENTER, 2));
+                float distance = sqrt(pow(x - matrix.center, 2) + pow(y - matrix.center, 2));
 
                 // Если диод внутри круга с затуханием на границе
                 if (distance <= r)

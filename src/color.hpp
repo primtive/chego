@@ -1,10 +1,17 @@
 #include <cstdint>
+#include <SFML/Graphics.hpp>
 
-class Color
+struct Color
 {
 public:
     uint8_t r, g, b;
+    Color() : r(0), g(0), b(0) {}
     Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
+
+    sf::Color toSFMLColor()
+    {
+        return sf::Color(r, g, b);
+    }
 
     static const Color White;
     static const Color Black;
