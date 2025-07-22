@@ -12,6 +12,13 @@ public:
     {
         return sf::Color(r, g, b);
     }
+    bool operator==(Color a) const
+    {
+        if (a.r == r && a.g == g && a.b == b)
+            return true;
+        else
+            return false;
+    }
 
     static const Color White;
     static const Color Black;

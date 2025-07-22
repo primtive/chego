@@ -16,7 +16,7 @@ class ChessGame : public IGame, public ISensorsHandler
 private:
     ChessBoard &board;
     chess::Board game;
-    sensors_t &hallMatrixState;
+    sensors_t &sensorsState;
     PlayerType whitePlayerType;
     PlayerType blackPlayerType;
     Engine &engine;
@@ -263,16 +263,16 @@ private:
         chess::movegen::legalmoves(moves, game);
         setIncorrectSquare(move.from());
         setIncorrectSquare(move.to());
-        board.draw();
+        board.display();
     }
 
 public:
     ChessGame(ChessBoard &board,
-              std::vector<std::vector<bool>> &hallMatrixState,
+              sensors_t &sensorsState,
               PlayerType whitePlayer, PlayerType blackPlayer,
               Engine &engine)
         : board(board),
-          hallMatrixState(hallMatrixState),
+          sensorsState(sensorsState),
           game(chess::constants::STARTPOS),
           whitePlayerType(whitePlayer),
           blackPlayerType(blackPlayer),
@@ -286,15 +286,15 @@ public:
     };
     bool checkStartPos()
     {
-        board.display();
+        board.init();
         bool isOk = true;
-        for (uint8_t x = 0; x < hallMatrixState.size(); ++x)
+        for (uint8_t x = 0; x < sensorsState.size(); ++x)
         {
-            for (uint8_t y = 0; y < hallMatrixState.size(); ++y)
+            for (uint8_t y = 0; y < sensorsState.size(); ++y)
             {
                 if (y < 2 || y > 5)
                 {
-                    if (!hallMatrixState[y][x])
+                    if (!sensorsState[y][x])
                     {
                         board.setCell(x, y, Color::Green);
                         isOk = false;
@@ -302,7 +302,7 @@ public:
                 }
                 else
                 {
-                    if (hallMatrixState[y][x])
+                    if (sensorsState[y][x])
                     {
                         board.setCell(x, y, Color::Red);
                         isOk = false;
@@ -310,7 +310,7 @@ public:
                 }
             }
         }
-        board.draw();
+        board.display();
         return isOk;
     };
     void handle(uint8_t x, uint8_t y, bool state) override
@@ -338,7 +338,7 @@ public:
             }
             board.setCell(game.kingSq(chess::Color::WHITE), whiteKingColor);
             board.setCell(game.kingSq(chess::Color::BLACK), blackKingColor);
-            board.draw();
+            board.display();
             delete this;
             return;
         }
@@ -356,13 +356,13 @@ public:
         std::string fen = game.getFen();
         printBoardFromFen(fen);
 
-        board.draw();
+        board.display();
     }
     void highlightPieces()
     {
-        for (uint8_t x = 0; x < hallMatrixState.size(); ++x)
+        for (uint8_t x = 0; x < sensorsState.size(); ++x)
         {
-            for (uint8_t y = 0; y < hallMatrixState.size(); ++y)
+            for (uint8_t y = 0; y < sensorsState.size(); ++y)
             {
                 chess::Square square = chess::Square(static_cast<chess::File>(x), static_cast<chess::Rank>(y));
                 chess::PieceType pieceType = game.at<chess::PieceType>(square);
@@ -391,6 +391,6 @@ public:
                 board.setCell(square, color);
             }
         }
-        board.draw();
+        board.display();
     }
 };

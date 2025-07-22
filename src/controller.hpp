@@ -4,6 +4,7 @@
 #include "chess_board.hpp"
 #include "go_board.hpp"
 #include "chess_game.hpp"
+#include "engine_lichess.hpp"
 
 enum class BoardType
 {
@@ -24,6 +25,8 @@ public:
     std::unique_ptr<SFMLSensors> sensors;
     std::unique_ptr<SFMLMatrix> matrix;
     std::unique_ptr<ChessBoard> chessboard;
+    std::unique_ptr<ChessGame> game;
+    EngineLichess engine;
     // GoBoard goboard;
 
     Controller() {}
@@ -40,12 +43,20 @@ public:
             menu = std::make_unique<Menu>();
 
             chessboard = std::make_unique<ChessBoard>(*matrix);
-            chessboard->display();
-            chessboard->draw();
+            chessboard->initWithAnim();
             break;
         case BoardType::GoBoard:
             std::cout << "goboard" << std::endl;
             break;
         }
+    }
+    void startChess()
+    {
+        game = std::make_unique<ChessGame>(*chessboard,
+                                           sensors->state,
+                                           PlayerType::HUMAN,
+                                           PlayerType::HUMAN,
+                                           engine);
+        sensors->setHandler(game.get());
     }
 };

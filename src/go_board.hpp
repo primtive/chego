@@ -7,40 +7,19 @@ class GoBoard
 
 public:
     GoBoard(IMatrix &matrix) : matrix(matrix) {}
-    void display();
-    void displayWithAnim();
+    void init();
+    void initWithAnim();
 };
 const sf::Color GoBoard::goColor = sf::Color(245, 222, 179);
 
-void GoBoard::display()
+void GoBoard::init()
 {
     matrix.fill(Color::Go);
-    matrix.draw();
+    matrix.display();
 }
 
-void GoBoard::displayWithAnim()
+void GoBoard::initWithAnim()
 {
-    for (float r = 0; r <= matrix.size; r += 0.3)
-    {
-
-        // Обход всех светодиодов
-        for (int y = 0; y < matrix.size; y++)
-        {
-            for (int x = 0; x < matrix.size; x++)
-            {
-                // Расчет расстояния от центра
-                float distance = sqrt(pow(x - matrix.center, 2) + pow(y - matrix.center, 2));
-
-                // Если диод внутри круга с затуханием на границе
-                if (distance <= r)
-                {
-                    if (r - distance < 1.0)
-                    {
-                        matrix.setCellColor(x, y, Color::Go);
-                    }
-                }
-            }
-        }
-        matrix.draw();
-    }
+    leds_t leds(matrix.size, std::vector<Color>(matrix.size, Color::Go));
+    matrix.displayWithAnim(leds);
 }

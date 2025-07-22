@@ -9,9 +9,9 @@ class ChessBoard
 
 public:
     ChessBoard(IMatrix &matrix);
-    void display();
-    void displayWithAnim();
-    void draw() { matrix.draw(); }
+    void display() { matrix.display(); };
+    void initWithAnim();
+    void init();
 
     void setCell(chess::Square square); // Clear cell
     void setCell(chess::Square square, Color color);
@@ -19,11 +19,9 @@ public:
     void setCell(u_int8_t x, u_int8_t y, Color color);
 };
 
-ChessBoard::ChessBoard(IMatrix &matrix) : matrix(matrix)
-{
-}
+ChessBoard::ChessBoard(IMatrix &matrix) : matrix(matrix) {}
 
-void ChessBoard::display()
+void ChessBoard::init()
 {
     for (uint8_t x = 0; x < matrix.size; ++x)
     {
@@ -39,41 +37,23 @@ void ChessBoard::display()
             }
         }
     }
+    matrix.display();
 }
 
-void ChessBoard::displayWithAnim()
+void ChessBoard::initWithAnim()
 {
-    for (float r = 0; r <= matrix.size; r += 0.3)
+    leds_t leds(matrix.size, std::vector<Color>(matrix.size, Color::Black));
+    for (uint8_t x = 0; x < matrix.size; ++x)
     {
-
-        // Обход всех светодиодов
-        for (int y = 0; y < matrix.size; y++)
+        for (uint8_t y = 0; y < matrix.size; ++y)
         {
-            for (int x = 0; x < matrix.size; x++)
+            if ((x / 2 + y / 2) % 2 == 0)
             {
-                // Расчет расстояния от центра
-                float distance = sqrt(pow(x - matrix.center, 2) + pow(y - matrix.center, 2));
-
-                // Если диод внутри круга с затуханием на границе
-                if (distance <= r)
-                {
-                    if (r - distance < 1.0)
-                    {
-                        if ((x / 2 + y / 2) % 2 == 0)
-                        {
-                            // Установка цвета с плавным затуханием
-                            matrix.setCellColor(x, y, Color::White);
-                        }
-                        else
-                        {
-                            matrix.setCellColor(x, y, Color::Black);
-                        }
-                    }
-                }
+                leds[y][x] = Color::White;
             }
         }
-        matrix.draw();
     }
+    matrix.displayWithAnim(leds);
 }
 
 void ChessBoard::setCell(chess::Square square)

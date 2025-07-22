@@ -16,7 +16,7 @@ private:
 
 public:
     sf::RenderWindow window;
-    sensors_t matrixState;
+    sensors_t state;
     uint8_t size;
 
     SFMLSensors(uint8_t size) : size(size)
@@ -26,7 +26,7 @@ public:
             sf::VideoMode({window_size, window_size}),
             "Debug panel",
             sf::Style::Close);
-        matrixState = sensors_t(
+        state = sensors_t(
             size,
             std::vector<bool>(size));
         for (int y = 0; y < size; ++y)
@@ -35,11 +35,11 @@ public:
             {
                 if (y < 2 || y > 5)
                 {
-                    matrixState[y][x] = true; // Изначально датчики в этих строках включены
+                    state[y][x] = true; // Изначально датчики в этих строках включены
                 }
                 else
                 {
-                    matrixState[y][x] = false; // Изначально датчики в этих строках выключены
+                    state[y][x] = false; // Изначально датчики в этих строках выключены
                 }
             }
         }
@@ -57,7 +57,7 @@ public:
 
                 sf::RectangleShape cell(sf::Vector2f(HALL_PIXEL_SIZE, HALL_PIXEL_SIZE));
                 cell.setPosition({static_cast<float>(x), static_cast<float>(y)});
-                cell.setFillColor(matrixState[blockY][blockX] ? sf::Color::White : sf::Color::Black);
+                cell.setFillColor(state[blockY][blockX] ? sf::Color::White : sf::Color::Black);
                 window.draw(cell);
             }
         }
@@ -112,8 +112,8 @@ public:
                         if (x < size && y < size)
                         {
                             // Переключение состояния светодиода
-                            matrixState[y][x] = !matrixState[y][x];
-                            triggerSensor(x, y, matrixState[y][x]);
+                            state[y][x] = !state[y][x];
+                            triggerSensor(x, y, state[y][x]);
                             display();
                         }
                     }

@@ -25,7 +25,7 @@ public:
     {
 
         game = std::make_unique<ChessGame>(chessboard,
-                                           sensors.matrixState,
+                                           sensors.state,
                                            PlayerType::HUMAN,
                                            PlayerType::HUMAN,
                                            engine);

@@ -20,6 +20,10 @@ file(GLOB U8G2_SOURCES
     ${PIO_LIB_DIR}/U8g2/src/clib/*.c
 )
 
+include(FetchContent)
+
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/resources)
 # Копируем шрифт в resources
@@ -38,3 +42,4 @@ add_executable(${PROJECT_NAME} src/main.cpp ${U8G2_SOURCES})
 target_link_libraries(${PROJECT_NAME} PUBLIC sfml-graphics sfml-window sfml-system)
 target_link_libraries(${PROJECT_NAME} PRIVATE cpr::cpr)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)

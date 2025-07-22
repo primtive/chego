@@ -20,7 +20,8 @@ int main()
             switch (event->getIf<sf::Event::KeyPressed>()->scancode)
             {
             case sf::Keyboard::Scancode::Q:
-                ctr.chessboard->displayWithAnim();
+                statusBar |= BOARD_TYPE_BIT;
+                ctr.menu->draw();
                 break;
             case sf::Keyboard::Scancode::Numpad8:
                 std::cout << "up" << std::endl;

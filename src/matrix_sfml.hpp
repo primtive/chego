@@ -31,20 +31,41 @@ public:
         leds = leds_t(size, std::vector<Color>(size));
 
         fill(Color::Black);
-        draw();
+        display();
     }
 
     void setCellColor(uint8_t x, uint8_t y, Color color);
-    void draw();
+    void display();
+    void displayWithAnim(leds_t _leds)
+    {
+        for (float r = 0; r <= size; r += 0.3)
+        {
+            // Обход всех светодиодов
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    // Расчет расстояния от центра
+                    float distance = sqrt(pow(x - center, 2) + pow(y - center, 2));
+
+                    // Если диод внутри круга с затуханием на границе
+                    if (r - distance < 1.0 && distance <= r)
+                    {
+                        setCellColor(x, y, _leds[y][x]);
+                    }
+                }
+            }
+            std::this_thread::sleep_for(30ms); // Эмуляция задержки для обновления экрана
+            display();
+        }
+    }
     void fill(Color color);
 
     void poll();
 };
 
-void SFMLMatrix::draw()
+void SFMLMatrix::display()
 {
-    std::this_thread::sleep_for(30ms); // Эмуляция задержки для обновления экрана
-
     window.clear(sf::Color(bgColor.r, bgColor.g, bgColor.b));
 
     // Рисование блоков 2x2 без внутренних разделителей
@@ -108,6 +129,7 @@ void SFMLMatrix::setCellColor(uint8_t x, uint8_t y, Color color)
 
 void SFMLMatrix::fill(Color color)
 {
+
     for (uint8_t x = 0; x < size; ++x)
     {
         for (uint8_t y = 0; y < size; ++y)
@@ -152,7 +174,7 @@ void SFMLMatrix::poll()
                     {
                         // Переключение состояния светодиода
                         setCellColor(x, y, Color::White);
-                        draw();
+                        display();
                     }
                 }
             }
