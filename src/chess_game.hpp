@@ -7,8 +7,8 @@
 
 enum class PlayerType
 {
-    HUMAN,
-    ENGINE
+    WHITE,
+    BLACK
 };
 
 class ChessGame : public IGame, public ISensorsHandler
@@ -17,14 +17,12 @@ private:
     ChessBoard &board;
     chess::Board game;
     sensors_t &sensorsState;
-    PlayerType whitePlayerType;
-    PlayerType blackPlayerType;
-    Engine &engine;
-
-    static constexpr uint8_t INCORRECT_SQUARES_BUFFER_SIZE = 8;
+    chess::Color engineColor = chess::Color::NONE;
+    std::unique_ptr<Engine> engine;
+    bool isGameStarted = false;
 
     chess::Movelist moves;
-    std::array<chess::Square, INCORRECT_SQUARES_BUFFER_SIZE> incorrectSquares;
+    std::vector<chess::Square> incorrectSquares;
     chess::Square felledSquare;
     chess::Square selectedSquare;
     chess::Square selectedAttackedSquare;
@@ -92,11 +90,7 @@ private:
     void setIncorrectSquare(const chess::Square square)
     {
         board.setCell(square, Color::Red);
-        chess::Square *emptySquare;
-        emptySquare = std::find(std::begin(incorrectSquares),
-                                std::end(incorrectSquares),
-                                chess::Square::NO_SQ);
-        *emptySquare = square;
+        incorrectSquares.push_back(square);
     }
     void clearPossibleMoves(chess::Square square)
     {
@@ -123,19 +117,21 @@ private:
     void processPieceMove(chess::Square square, bool state)
     {
         std::cout << game.sideToMove();
-        for (chess::Square &sq : incorrectSquares)
+        auto incorrectSquareIt = std::find(incorrectSquares.begin(),
+                                           incorrectSquares.end(),
+                                           square);
+        if (incorrectSquareIt != incorrectSquares.end())
         {
-            if (square == sq) // Убираем выделение с неправильного хода, при возвращении или удалении фигуры
-            {
-                board.setCell(sq);
-                sq = chess::Square::NO_SQ;
-                return;
-            }
+            std::cout << "erased square";
+            board.setCell(*incorrectSquareIt);
+            incorrectSquares.erase(incorrectSquareIt);
         }
 
-        if (((game.sideToMove() == chess::Color::WHITE && whitePlayerType == PlayerType::ENGINE) ||
-             (game.sideToMove() == chess::Color::BLACK && blackPlayerType == PlayerType::ENGINE)))
+        if (game.sideToMove() == engineColor)
+        {
             setIncorrectSquare(square);
+            return;
+        }
 
         if (state)
         {
@@ -173,12 +169,9 @@ private:
                         if (felledSquare != chess::Square::NO_SQ)
                             felledSquare = chess::Square::NO_SQ; // Сбрасываем срубленную фигуру
 
+                        if (game.sideToMove() != engineColor)
+                            engine->makeMove(move);
                         game.makeMove(move);
-                        if (game.sideToMove() == chess::Color::WHITE && whitePlayerType == PlayerType::ENGINE ||
-                            game.sideToMove() == chess::Color::BLACK && blackPlayerType == PlayerType::ENGINE)
-                        {
-                            engine.makeMove(move);
-                        }
 
                         clearPossibleMoves(selectedSquare);
                         selectedSquare = chess::Square::NO_SQ;
@@ -268,23 +261,37 @@ private:
 
 public:
     ChessGame(ChessBoard &board,
-              sensors_t &sensorsState,
-              PlayerType whitePlayer, PlayerType blackPlayer,
-              Engine &engine)
+              sensors_t &sensorsState)
         : board(board),
           sensorsState(sensorsState),
-          game(chess::constants::STARTPOS),
-          whitePlayerType(whitePlayer),
-          blackPlayerType(blackPlayer),
-          engine(engine)
+          game(chess::constants::STARTPOS) {};
+    ChessGame(ChessBoard &board,
+              sensors_t &sensorsState,
+              chess::Color engineColor,
+              std::unique_ptr<Engine> engine,
+              std::string fen)
+        : board(board),
+          sensorsState(sensorsState),
+          game(fen),
+          engineColor(engineColor),
+          engine(std::move(engine)) {};
+    void start()
     {
+        isGameStarted = true;
         chess::movegen::legalmoves(moves, game);
-        engine.setMoveHandler([this](const chess::Move &move)
-                              {
-                // Обработка хода от движка
-                this->handleEngineMove(move); });
-    };
-    bool checkStartPos()
+        if (engineColor != chess::Color::NONE)
+        {
+            engine->setMoveHandler([this](const std::string &uci_move)
+                                   { 
+                                    chess::Move move = chess::uci::uciToMove(game, uci_move);
+                                    handleEngineMove(move); });
+            std::thread t([this]
+                          { engine->start(); });
+            t.detach();
+        }
+    }
+    const bool getGameStarted() const { return isGameStarted; }
+    bool checkPosition()
     {
         board.init();
         bool isOk = true;
@@ -292,21 +299,13 @@ public:
         {
             for (uint8_t y = 0; y < sensorsState.size(); ++y)
             {
-                if (y < 2 || y > 5)
+                chess::Square square = chess::Square(static_cast<chess::File>(x), static_cast<chess::Rank>(y));
+                chess::PieceType pieceType = game.at<chess::PieceType>(square);
+
+                if (sensorsState[y][x] != (pieceType != chess::PieceType::NONE))
                 {
-                    if (!sensorsState[y][x])
-                    {
-                        board.setCell(x, y, Color::Green);
-                        isOk = false;
-                    }
-                }
-                else
-                {
-                    if (sensorsState[y][x])
-                    {
-                        board.setCell(x, y, Color::Red);
-                        isOk = false;
-                    }
+                    board.setCell(x, y, sensorsState[y][x] ? Color::Red : Color::Green);
+                    isOk = false;
                 }
             }
         }
@@ -315,6 +314,12 @@ public:
     };
     void handle(uint8_t x, uint8_t y, bool state) override
     {
+        if (!isGameStarted)
+        {
+            checkPosition();
+            return;
+        }
+
         chess::Square square = chess::Square(static_cast<chess::File>(x), static_cast<chess::Rank>(y));
         processPieceMove(square, state);
 

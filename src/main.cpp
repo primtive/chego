@@ -3,17 +3,22 @@
 
 #include "controller.hpp"
 #include <SFML/Graphics.hpp>
+#include "menu.hpp"
 
 int main()
 {
-    Controller ctr;
-    ctr.init();
+    controller_ptr = std::make_shared<Controller>();
+    controller_ptr->init();
 
-    while (ctr.matrix->window.isOpen() && ctr.sensors->window.isOpen())
+    setenv("SDL_VIDEODRIVER", "wayland", 1);
+    std::unique_ptr<Menu> menu;
+    menu = std::make_unique<Menu>();
+
+    while (controller_ptr->matrix->window.isOpen() && controller_ptr->sensors->window.isOpen())
     {
-        ctr.sensors->poll();
+        controller_ptr->sensors->poll();
 
-        while (const std::optional event = ctr.matrix->window.pollEvent())
+        while (const std::optional event = controller_ptr->matrix->window.pollEvent())
         {
             if (!event->is<sf::Event::KeyPressed>())
                 continue;
@@ -21,19 +26,25 @@ int main()
             {
             case sf::Keyboard::Scancode::Q:
                 statusBar |= BOARD_TYPE_BIT;
-                ctr.menu->draw();
+                menu->draw();
+                break;
+            case sf::Keyboard::Scancode::W:
+                controller_ptr->initChess();
+                break;
+            case sf::Keyboard::Scancode::E:
+                controller_ptr->game->checkPosition();
                 break;
             case sf::Keyboard::Scancode::Numpad8:
                 std::cout << "up" << std::endl;
-                ctr.menu->prev();
+                menu->prev();
                 break;
             case sf::Keyboard::Scancode::Numpad5:
                 std::cout << "select" << std::endl;
-                ctr.menu->select();
+                menu->select();
                 break;
             case sf::Keyboard::Scancode::Numpad2:
                 std::cout << "down" << std::endl;
-                ctr.menu->next();
+                menu->next();
                 break;
             default:
                 // Unhandled scancode, do nothing

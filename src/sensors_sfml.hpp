@@ -92,7 +92,6 @@ public:
             // Обработка кликов мыши
             if (const auto *mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>())
             {
-                std::cout << "event" << std::endl;
                 if (mouseButtonPressed->button == sf::Mouse::Button::Left)
                 {
                     int mouseX = sf::Mouse::getPosition(window).x;

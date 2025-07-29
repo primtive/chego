@@ -1,19 +1,71 @@
+#pragma once
+
 #include <string>
 #include <iostream>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
+#include "globals.hpp"
 
+using nlohmann::json;
 using std::string;
-using json = nlohmann::json;
 
 namespace lichess
 {
-    static const string baseApi = "https://lichess.org/api/";
-    static string authTokens[] = {"lip_7Rm30B9zcuMCwoRZ6mrB"};
-    uint8_t accountId = 0;
+    struct Game
+    {
+        // Game(string id, string opponent, string fen, bool isEngineWhite) : id(id), opponent(opponent), isEngineWhite(isEngineWhite), fen(fen) {}
+        string id;
+        string name;
+        string fen;
+        bool isEngineWhite;
+    };
 
-    std::vector<std::vector<std::string>> challenges{};
-    std::vector<std::vector<std::string>> games{};
+    struct Challenge
+    {
+        string id;
+        string name;
+    };
+    template <typename T>
+    struct MUIList : public std::vector<T>
+    {
+        uint16_t get_cnt(void *data)
+        {
+            return this->size();
+        }
+        const char *get_str(void *data, uint16_t index)
+        {
+            if ((this->size() == 0) || (index > this->size() - 1))
+                return "\0";
+            return (*this)[index].name.c_str();
+        }
+    };
+
+    static const string baseApi = "https://lichess.org/api/";
+
+    MUIList<Game> games{};
+    MUIList<Challenge> challenges{};
+
+    uint16_t challenges_get_cnt(void *data) { return challenges.get_cnt(data); }
+    const char *challenges_get_str(void *data, uint16_t index) { return challenges.get_str(data, index); }
+
+    uint16_t games_get_cnt(void *data) { return games.get_cnt(data); }
+    const char *games_get_str(void *data, uint16_t index) { return games.get_str(data, index); }
+
+    uint16_t friends_get_cnt(void *data)
+    {
+        return accounts[accountSelection].friends.size();
+    }
+    const char *friends_get_str(void *data, uint16_t index)
+    {
+        if (index > accounts[accountSelection].friends.size() - 1)
+            return "\0";
+        return accounts[accountSelection].friends[index].c_str();
+    }
+
+    auto getAuthStr()
+    {
+        return "Bearer " + accounts[accountSelection].authToken;
+    }
 
     json apiPost(string path)
     {
@@ -23,8 +75,9 @@ namespace lichess
         cpr::Response response = cpr::Post(
             cpr::Url{url},
             cpr::Header{
-                {"Authorization", "Bearer " + authTokens[accountId]},
-                {"Content-Type", "application/json"}});
+                {"Authorization", getAuthStr()},
+                // {"Content-Type", "application/json"},
+            });
 
         if (response.status_code == 200)
         {
@@ -43,8 +96,7 @@ namespace lichess
 
         cpr::Response response = cpr::Get(
             cpr::Url{url},
-            cpr::Header{{"Authorization", "Bearer lip_7Rm30B9zcuMCwoRZ6mrB"}});
-        // cpr::Header{{"Authorization", "Bearer " + authTokens[accountId]}});
+            cpr::Header{{"Authorization", getAuthStr()}});
 
         std::cout << "Response: " << response.text << std::endl;
         if (response.status_code == 200)
@@ -59,48 +111,31 @@ namespace lichess
 
     void fetch_challenges()
     {
+        challenges.clear();
         json res = apiGet("challenge");
         for (auto &challenge : res["in"])
         {
-            challenges.push_back({challenge["id"],
-                                  std::string("A") + challenge["challenger"]["id"].get<std::string>()});
+            challenges.push_back(
+                Challenge{
+                    challenge["id"],
+                    challenge["challenger"]["id"].get<string>(),
+                });
         }
     }
 
     void fetch_games()
     {
+        games.clear();
         json res = apiGet("account/playing");
         for (auto &game : res["nowPlaying"])
         {
-            std::cout << game["opponent"]["id"];
-            games.push_back({game["gameId"],
-                             std::string("A") + game["opponent"]["username"].get<std::string>()});
+            games.push_back(
+                Game{
+                    game["gameId"],
+                    game["opponent"]["username"].get<string>(),
+                    game["fen"],
+                    game["color"].get<string>() != "white", // Для engine наоборот
+                });
         }
-        std::cout << games[0][1];
     }
-
-    uint16_t challenges_get_cnt(void *data)
-    {
-        return challenges.size(); /* number of menu entries */
-    }
-    const char *challenges_get_str(void *data, uint16_t index)
-    {
-        if (index > challenges.size() - 1)
-            return "\0";
-
-        return challenges[index][1].c_str();
-    }
-
-    uint16_t games_get_cnt(void *data)
-    {
-        return games.size(); /* number of menu entries */
-    }
-    const char *games_get_str(void *data, uint16_t index)
-    {
-        if (index > games.size() - 1)
-            return "\0";
-
-        return games[index][1].c_str();
-    }
-
 }

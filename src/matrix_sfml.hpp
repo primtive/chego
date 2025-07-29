@@ -13,52 +13,28 @@ class SFMLMatrix : public IMatrix
 {
 private:
     leds_t leds;
-    static const int PIXEL_SIZE = 28; // Размер одного LED
-    static const int SPACING = 2;     // Промежуток между блоками
-    static const int CELL_SIZE = 2;
+    static constexpr int PIXEL_SIZE = 28; // Размер одного LED
+    static constexpr int SPACING = 2;     // Промежуток между блоками
+    static constexpr int CELL_SIZE = 2;
+    static constexpr uint16_t WINDOW_SIZE = (size / CELL_SIZE) * (PIXEL_SIZE * CELL_SIZE + SPACING) - SPACING;
     static const Color bgColor;
 
 public:
     sf::RenderWindow window;
 
-    SFMLMatrix(uint8_t size) : IMatrix(size)
+    SFMLMatrix()
     {
-        uint16_t window_size = (size / CELL_SIZE) * (PIXEL_SIZE * CELL_SIZE + SPACING) - SPACING;
         window = sf::RenderWindow(
-            sf::VideoMode({window_size, window_size}),
+            sf::VideoMode({WINDOW_SIZE, WINDOW_SIZE}),
             "LED Matrix",
             sf::Style::Close);
-        leds = leds_t(size, std::vector<Color>(size));
-
-        fill(Color::Black);
-        display();
+        leds = leds_t(size, std::vector<Color>(size, Color::Black));
+        // display();
     }
 
     void setCellColor(uint8_t x, uint8_t y, Color color);
     void display();
-    void displayWithAnim(leds_t _leds)
-    {
-        for (float r = 0; r <= size; r += 0.3)
-        {
-            // Обход всех светодиодов
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    // Расчет расстояния от центра
-                    float distance = sqrt(pow(x - center, 2) + pow(y - center, 2));
-
-                    // Если диод внутри круга с затуханием на границе
-                    if (r - distance < 1.0 && distance <= r)
-                    {
-                        setCellColor(x, y, _leds[y][x]);
-                    }
-                }
-            }
-            std::this_thread::sleep_for(30ms); // Эмуляция задержки для обновления экрана
-            display();
-        }
-    }
+    void displayWithAnim(leds_t _leds);
     void fill(Color color);
 
     void poll();
@@ -120,6 +96,29 @@ void SFMLMatrix::display()
         window.draw(text);
     }
     window.display();
+}
+
+void SFMLMatrix::displayWithAnim(leds_t _leds)
+{
+    for (float r = 0; r <= size; r += 0.3)
+    {
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                // Расчет расстояния от центра
+                float distance = sqrt(pow(x - center, 2) + pow(y - center, 2));
+
+                // Если диод внутри круга с затуханием на границе
+                if (r - distance < 1.0 && distance <= r)
+                {
+                    setCellColor(x, y, _leds[y][x]);
+                }
+            }
+        }
+        std::this_thread::sleep_for(30ms); // Эмуляция задержки для обновления экрана
+        display();
+    }
 }
 
 void SFMLMatrix::setCellColor(uint8_t x, uint8_t y, Color color)

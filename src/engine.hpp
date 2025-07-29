@@ -5,16 +5,16 @@
 class Engine
 {
 protected:
-    chess::Color color = chess::Color::BLACK; // Черный по умолчанию
-    std::function<void(const chess::Move &)> moveHandler;
-    virtual void makeEngineMove() = 0;
-
 public:
+    chess::Color color;
+
     Engine() = default;
     Engine(chess::Color color) : color(color) {}
-    void setMoveHandler(std::function<void(const chess::Move &)> handler)
+    std::function<void(std::string &)> moveHandler;
+    void setMoveHandler(std::function<void(const std::string &)> handler)
     {
         moveHandler = handler;
     }
     virtual void makeMove(chess::Move move) = 0;
+    virtual void start() = 0;
 };
