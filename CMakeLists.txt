@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.16)
 project(chego)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -25,6 +25,7 @@ include(FetchContent)
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
+file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/resources)
 # Копируем шрифт в resources
 configure_file(
@@ -33,7 +34,7 @@ configure_file(
     COPYONLY
 )
 
-add_executable(${PROJECT_NAME} src/main.cpp ${U8G2_SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${U8G2_SOURCES})
 
 # set_target_properties(${PROJECT_NAME} PROPERTIES
 #     ENVIRONMENT "SDL_RENDER_DRIVER=opengles2;SDL_VIDEODRIVER=x11;SDL_VIDEODRIVER=wayland"

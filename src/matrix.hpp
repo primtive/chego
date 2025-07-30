@@ -8,9 +8,11 @@ class IMatrix
 {
 protected:
 public:
-    static constexpr uint8_t size = 16;
-    static constexpr float center = (size - 1) / 2.0f;
+    const uint8_t size;
+    const float center;
 
+    IMatrix(uint8_t size) : size(size),
+                            center((size - 1) / 2.0f) {};
     virtual ~IMatrix() = default;
 
     virtual void setCellColor(uint8_t x, uint8_t y, Color color) = 0;

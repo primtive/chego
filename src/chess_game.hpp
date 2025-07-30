@@ -1,4 +1,5 @@
 #pragma once
+#include <thread>
 #include "chess_board.hpp"
 #include "game.hpp"
 #include "chess.hpp"

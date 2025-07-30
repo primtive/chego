@@ -2,7 +2,6 @@
 #include <iostream>
 #include "globals.hpp"
 #include "controller.hpp"
-#include <SFML/Graphics.hpp>
 #include "menu.hpp"
 
 int main()
@@ -14,11 +13,9 @@ int main()
     std::unique_ptr<Menu> menu;
     menu = std::make_unique<Menu>();
 
-    while (controller_ptr->matrix->window.isOpen() && controller_ptr->sensors->window.isOpen())
+    while (window.isOpen())
     {
-        controller_ptr->sensors->poll();
-
-        while (const std::optional event = controller_ptr->matrix->window.pollEvent())
+        while (const std::optional event = window.pollEvent())
         {
             if (!event->is<sf::Event::KeyPressed>())
                 continue;

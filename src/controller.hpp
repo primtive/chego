@@ -1,12 +1,15 @@
 #pragma once
 
-#include "matrix_sfml.hpp"
-#include "sensors_sfml.hpp"
 #include "chess_board.hpp"
 #include "chess_game.hpp"
 #include "engine_lichess.hpp"
 #include "engine_random.hpp"
 #include "lichess.hpp"
+#include "sensors_sfml.hpp"
+#include "matrix_sfml.hpp"
+#include "debug_window.hpp"
+
+DebugWindow window;
 
 class Controller
 {
@@ -21,8 +24,11 @@ public:
     void init()
     {
         std::cout << "created chessboard" << std::endl;
-        sensors = std::make_unique<SFMLSensors>(8);
-        matrix = std::make_unique<SFMLMatrix>();
+        sensors = std::make_unique<SFMLSensors>(window, DebugWindow::SENSORS_SIZE);
+        matrix = std::make_unique<SFMLMatrix>(window, DebugWindow::MATRIX_SIZE);
+
+        window.setMatrix(matrix.get());
+        window.setSensors(sensors.get());
 
         chessboard = std::make_unique<ChessBoard>(*matrix);
         // chessboard->initWithAnim();

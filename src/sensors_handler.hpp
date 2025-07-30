@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 
+
+using sensors_t = std::vector<std::vector<bool>>;
 class ISensorsHandler
 {
 public:

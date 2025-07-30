@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <SFML/Graphics.hpp>
 
@@ -34,11 +36,11 @@ public:
     static const Color Purple;
 };
 
-const Color Color::White(255, 255, 255);
-const Color Color::Black(0, 0, 0);
-const Color Color::Go(245, 222, 179); // Wheat color for Go
-const Color Color::Red(255, 0, 0);
-const Color Color::Green(0, 255, 0); // Green color for highlighting
-const Color Color::Blue(0, 0, 255);  // Blue color for highlighting
-const Color Color::Orange(255, 165, 0);
-const Color Color::Purple(128, 0, 128); // Purple color for highlighting
+inline const Color Color::White(255, 255, 255);
+inline const Color Color::Black(0, 0, 0);
+inline const Color Color::Go(245, 222, 179); // Wheat color for Go
+inline const Color Color::Red(255, 0, 0);
+inline const Color Color::Green(0, 255, 0); // Green color for highlighting
+inline const Color Color::Blue(0, 0, 255);  // Blue color for highlighting
+inline const Color Color::Orange(255, 165, 0);
+inline const Color Color::Purple(128, 0, 128); // Purple color for highlighting
