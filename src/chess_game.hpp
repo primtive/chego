@@ -17,9 +17,10 @@ private:
     ChessBoard &board;
     chess::Board game;
     sensors_t &sensorsState;
-    chess::Color engineColor = chess::Color::NONE;
+    chess::Color engineColor;
     std::unique_ptr<Engine> engine;
     bool isGameStarted = false;
+    const bool isEngineGame;
 
     chess::Movelist moves;
     std::vector<chess::Square> incorrectSquares;
@@ -92,6 +93,16 @@ private:
         board.setCell(square, Color::Red);
         incorrectSquares.push_back(square);
     }
+    void makeMove(chess::Move move)
+    {
+        game.makeMove(move);
+        if (isEngineGame)
+        {
+            if (game.sideToMove() == engineColor)
+                engine->makeMove(move);
+        }
+        chess::movegen::legalmoves(moves, game);
+    }
     void clearPossibleMoves(chess::Square square)
     {
         for (const auto &move : moves)
@@ -116,15 +127,17 @@ private:
     }
     void processPieceMove(chess::Square square, bool state)
     {
+        // if(game.)
+
         std::cout << game.sideToMove();
         auto incorrectSquareIt = std::find(incorrectSquares.begin(),
                                            incorrectSquares.end(),
                                            square);
         if (incorrectSquareIt != incorrectSquares.end())
         {
-            std::cout << "erased square";
             board.setCell(*incorrectSquareIt);
             incorrectSquares.erase(incorrectSquareIt);
+            return;
         }
 
         if (game.sideToMove() == engineColor)
@@ -168,12 +181,9 @@ private:
                         }
                         if (felledSquare != chess::Square::NO_SQ)
                             felledSquare = chess::Square::NO_SQ; // Сбрасываем срубленную фигуру
-
-                        if (game.sideToMove() != engineColor)
-                            engine->makeMove(move);
-                        game.makeMove(move);
-
                         clearPossibleMoves(selectedSquare);
+
+                        makeMove(move);
                         selectedSquare = chess::Square::NO_SQ;
                         if (move.typeOf() == chess::Move::ENPASSANT) // Взятие на проходе
                         {
@@ -182,7 +192,6 @@ private:
                             // chess::Square enpassantSquare = game.enpassantSq();
                             setIncorrectSquare(enpassantSquare);
                         }
-                        chess::movegen::legalmoves(moves, game);
                         return;
                     }
                 }
@@ -198,8 +207,21 @@ private:
                     if (square == move.to() && move.from() == selectedSquare) // Убираем фигуру с доски, когда рубим
                     {
                         clearPossibleMoves(selectedSquare);
-                        felledSquare = move.to();
-                        board.setCell(felledSquare, Color::Purple);
+                        if (move.typeOf() == chess::Move::CASTLING) // Ракировка
+                        {
+                            chess::Square king_square = chess::Square::castling_king_square(move.to().rank() == chess::Rank::RANK_1, game.sideToMove());
+                            chess::Square rook_square = chess::Square::castling_rook_square(move.to().rank() == chess::Rank::RANK_1, game.sideToMove());
+
+                            setIncorrectSquare(rook_square);
+                            selectedSquare = king_square;
+                            makeMove(move);
+                            board.setCell(selectedSquare, Color::Purple);
+                        }
+                        else
+                        {
+                            felledSquare = move.to();
+                            board.setCell(felledSquare, Color::Purple);
+                        }
                         return;
                     }
                     else if (square == move.from() && move.to() == selectedAttackedSquare) // Убираем нашу фигуру с доски, когда рубим
@@ -264,7 +286,10 @@ public:
               sensors_t &sensorsState)
         : board(board),
           sensorsState(sensorsState),
-          game(chess::constants::STARTPOS) {};
+          game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1"),
+          //   game(chess::constants::STARTPOS),
+          engineColor(chess::Color::NONE),
+          isEngineGame(false) {};
     ChessGame(ChessBoard &board,
               sensors_t &sensorsState,
               chess::Color engineColor,
@@ -274,7 +299,12 @@ public:
           sensorsState(sensorsState),
           game(fen),
           engineColor(engineColor),
-          engine(std::move(engine)) {};
+          engine(std::move(engine)),
+          isEngineGame(true) {};
+    ~ChessGame()
+    {
+        board.init();
+    }
     void start()
     {
         isGameStarted = true;
@@ -344,7 +374,7 @@ public:
             board.setCell(game.kingSq(chess::Color::WHITE), whiteKingColor);
             board.setCell(game.kingSq(chess::Color::BLACK), blackKingColor);
             board.display();
-            delete this;
+            // controller_ptr->resetChess();
             return;
         }
         if (game.inCheck()) // Проверка на шах

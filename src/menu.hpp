@@ -4,10 +4,7 @@
 #include "U8g2lib.h"
 #include "fonts.h"
 #include "lichess.hpp"
-#include "controller.hpp"
 #include "globals.hpp"
-
-std::shared_ptr<Controller> controller_ptr;
 
 constexpr static uint8_t WIFI_ENABLED_BIT = 0x01;    // 0b00000001 (бит 0)
 constexpr static uint8_t BOARD_CONNECTED_BIT = 0x02; // 0b00000010 (бит 1)
@@ -56,13 +53,21 @@ uint8_t mui_draw_status_bar(mui_t *ui, uint8_t msg)
 {
   if (msg == MUIF_MSG_DRAW)
   {
-    char a = (statusBar & WIFI_ENABLED_BIT) != 0 ? 'A' : 'B';
-    char b = (statusBar & BOARD_CONNECTED_BIT) != 0 ? ((statusBar & BOARD_TYPE_BIT) ? 'a' : 'b') : 'c';
+    char a = (status_bar & WIFI_ENABLED_BIT) != 0 ? 'A' : 'B';
+    char b = (status_bar & BOARD_CONNECTED_BIT) != 0 ? ((status_bar & BOARD_TYPE_BIT) ? 'a' : 'b') : 'c';
     char str[3] = {a, b, '\0'};
     u8g2_DrawUTF8(mui_get_U8g2(ui), mui_get_x(ui), mui_get_y(ui), str);
   }
   return 0;
 }
+uint8_t mui_brightness(mui_t *ui, uint8_t msg) {
+  uint8_t val = mui_u8g2_u8_bar_wm_mud_pi(ui, msg);
+  if (val) {
+    controller_ptr->matrix->display();
+  }
+  return val;
+}
+
 
 enum class Action : uint8_t
 {
@@ -71,7 +76,9 @@ enum class Action : uint8_t
   PlayOffline = 2,
   Highlight = 3,
   StartGame = 4,
-  Friends = 5
+  Friends = 5,
+  BotGame = 6,
+  QuitGame = 7
 };
 enum class ActionButton : char
 {
@@ -101,33 +108,57 @@ uint8_t mui_action_button(mui_t *ui, uint8_t msg)
     {
     case Action::Challenges:
       fetch_challenges();
-      mui_SaveForm(ui);
       return mui_GotoForm(ui, 28, 0);
       break;
     case Action::Games:
       fetch_games();
-      mui_SaveForm(ui);
       return mui_GotoForm(ui, 29, 0);
       break;
     case Action::Friends:
-      mui_SaveForm(ui);
       return mui_GotoForm(ui, 30, 0);
     case Action::PlayOffline:
       controller_ptr->initChess();
       if (!(controller_ptr->game->getGameStarted()))
       {
-        mui_SaveForm(ui);
         return mui_GotoForm(ui, 40, 0);
       }
-      std::cout << "offline";
-      break;
+      is_game_active = true;
+      return mui_GotoForm(ui, 50, 0);
     case Action::Highlight:
       controller_ptr->game->highlightPieces();
       break;
     case Action::StartGame:
       if (controller_ptr->game->checkPosition())
+      {
         controller_ptr->startChess();
+        is_game_active = true;
+        return mui_GotoForm(ui, 50, 0);
+      }
       break;
+    case Action::QuitGame:
+      controller_ptr->resetChess();
+      return mui_GotoForm(ui, 1, 0);
+    case Action::BotGame:
+      if (is_offline_bot)
+      {
+        controller_ptr->initOfflineBot();
+      }
+      else
+      {
+        json game = apiPost("challenge/ai", cpr::Payload{{"level", std::to_string(bot_level)}});
+        controller_ptr->initLichess(Game{
+            game["id"],
+            "Stockfish",
+            game["fen"],
+            game["player"].get<std::string>() != "white"});
+      }
+
+      if (!(controller_ptr->game->getGameStarted()))
+      {
+        return mui_GotoForm(ui, 40, 0);
+      }
+      is_game_active = true;
+      return mui_GotoForm(ui, 50, 0);
     }
   case MUIF_MSG_CURSOR_LEAVE:
     break;
@@ -176,7 +207,7 @@ uint8_t mui_action_list_button(mui_t *ui, uint8_t msg)
       return mui_GotoForm(ui, 22, 0);
       break;
     case ActionButton::Friends:
-      apiPost("challenge/" + accounts[accountSelection].friends[*selection]);
+      apiPost("challenge/" + accounts[account_selection].friends[*selection]);
       return mui_GotoForm(ui, 22, 0);
       break;
     case ActionButton::Games:
@@ -223,20 +254,22 @@ muif_t muif_list[] = {
     MUIF_BUTTON("PB", mui_u8g2_btn_goto_wm_pf), // play button (without borders)
     MUIF_BUTTON("EX", mui_u8g2_btn_exit_wm_fi), // exit button
     MUIF_BUTTON("AB", mui_action_button),       // action button
-    /* lichess challenges */
-    MUIF_U8G2_U16_LIST("LC", &lichessChallengeSelection, NULL, challenges_get_str, challenges_get_cnt, mui_action_list_button),
-    MUIF_U8G2_U16_LIST("LG", &lichessGameSelection, NULL, games_get_str, games_get_cnt, mui_action_list_button),
-    MUIF_U8G2_U16_LIST("LF", &lichessGameSelection, NULL, friends_get_str, friends_get_cnt, mui_action_list_button),
-
+    /* lichess */
+    MUIF_U8G2_U16_LIST("LC", &challenge_selection, NULL, challenges_get_str, challenges_get_cnt, mui_action_list_button),
+    MUIF_U8G2_U16_LIST("LG", &game_selection, NULL, games_get_str, games_get_cnt, mui_action_list_button),
+    MUIF_U8G2_U16_LIST("LF", &friend_selection, NULL, friends_get_str, friends_get_cnt, mui_action_list_button),
+    /* lichess bot */
+    MUIF_VARIABLE("CB", &is_offline_bot, mui_u8g2_u8_chkbox_wm_pi),
+    MUIF_U8G2_U8_MIN_MAX_STEP("LB", &bot_level, 1, 8, 1, MUI_MMS_4X_BAR | MUI_MMS_SHOW_VALUE, mui_u8g2_u8_bar_wm_mud_pi),
     /* status bar */
     MUIF_RO("SB", mui_draw_status_bar),
     /* wi-fi select */
     MUIF_VARIABLE("IC", &wifi, mui_u8g2_u8_opt_parent_wm_pi),
     MUIF_VARIABLE("OC", &wifi, mui_u8g2_u8_opt_radio_child_w1_pi),
     /* lichess acc select */
-    MUIF_U8G2_U16_LIST("AL", &accountSelection, NULL, accounts_get_str, accounts_get_cnt, mui_u8g2_u16_list_line_wa_mud_pi),
+    MUIF_U8G2_U16_LIST("AL", &account_selection, NULL, accounts_get_str, accounts_get_cnt, mui_u8g2_u16_list_line_wa_mud_pi),
     /* brightness bar */
-    MUIF_U8G2_U8_MIN_MAX_STEP("B0", &brightness, 0, 16, 2, MUI_MMS_2X_BAR | MUI_MMS_SHOW_VALUE, mui_u8g2_u8_bar_wm_mud_pi),
+    MUIF_U8G2_U8_MIN_MAX_STEP("B0", &brightness, 0, 10, 2, MUI_MMS_4X_BAR | MUI_MMS_SHOW_VALUE, mui_brightness),
 
 };
 
@@ -306,7 +339,7 @@ fds_t fds_data[] =
     MUI_XYAT("AB", 5, 25, 2, "Вдвоем на доске") // Action::PlayOffline
     MUI_XYAT("GL", 5, 37, 22, "Играть онлайн")  // online
     MUI_XYAT("GL", 5, 49, 23, "Играть с ботом") // bot
-    MUI_XYAT("GL", 5, 61, 20, "Назад")          // go back
+    MUI_XYAT("GL", 5, 61, 2, "Назад")          // go back
 
     /* play offline */
     /*
@@ -326,6 +359,17 @@ fds_t fds_data[] =
     MUI_XYAT("AB", 5, 37, 1, "Активные игры")   // Action::Games
     MUI_XYAT("AB", 5, 49, 5, "Играть с другом") // Action::Friends
     MUI_XYAT("GL", 5, 61, 20, "Назад")          // go back
+
+    /* play bot */
+    MUI_FORM(23)                       //
+    MUI_LABEL(5, 10, "Игра с ботом:")  //
+    MUI_XY("HR", 0, 13)                //
+    MUI_LABEL(5, 24, "Сложность:")     //
+    MUI_XY("LB", 70, 25)               //
+    MUI_LABEL(5, 36, "Оффлайн: ")      //
+    MUI_XY("CB", 70, 37)               //
+    MUI_XYAT("AB", 5, 48, 6, "Начать") // Action::BotGame
+    MUI_XYAT("GL", 5, 60, 20, "Назад") // go back
 
     /* lichess challenges */
     MUI_FORM(28)                       //
@@ -354,12 +398,6 @@ fds_t fds_data[] =
     MUI_XYAT("LF", 5, 49, 2, "f")      //
     MUI_XYAT("GL", 5, 61, 22, "Назад") // go back
 
-    /* play bot */
-    MUI_FORM(31)                          //
-    MUI_LABEL(5, 10, "Выберите уровень:") //
-    MUI_XY("HR", 0, 13)                   //
-    MUI_XYAT("GL", 5, 61, 22, "Назад")    // go back
-
     /* prepare game */
     MUI_FORM(40)                            //
     MUI_LABEL(5, 10, "Подготовка игры:")    //
@@ -368,6 +406,13 @@ fds_t fds_data[] =
     MUI_XYAT("AB", 5, 37, 4, "Начать игру") // Action::StartGame
     // MUI_XYAT("GL", 5, 49, 2, "d")        //
     MUI_XYAT("GL", 5, 61, 22, "Назад") // go back
+
+    /* ingame menu */
+    MUI_FORM(50)              //
+    MUI_LABEL(5, 10, "Меню:") //
+    MUI_XY("HR", 0, 13)       //
+
+    MUI_XYAT("AB", 5, 61, 7, "Выйти из игры") // Action::QuitGame
     ;
 
 class Menu
@@ -388,7 +433,6 @@ public:
   {
     if (mui.isFormActive())
     {
-      std::cout << mui.getCurrentFormId() << std::endl;
       u8g2.firstPage();
       do
       {
@@ -397,8 +441,24 @@ public:
     }
     else
     {
-      u8g2.clearDisplay();
-      std::cout << "no form" << std::endl;
+      if (is_menu_closed)
+      {
+        if (is_game_active)
+        {
+          mui.gotoForm(50, 1);
+        }
+        else
+        {
+          mui.gotoForm(1, 1);
+        }
+        draw();
+        is_menu_closed = false;
+      }
+      else
+      {
+        u8g2.clearDisplay();
+        is_menu_closed = true;
+      }
     }
   }
   void select()

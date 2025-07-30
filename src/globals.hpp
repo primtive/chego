@@ -5,9 +5,9 @@
 
 struct Account
 {
-    std::string name;
-    std::string authToken;
-    std::vector<std::string> friends;
+  std::string name;
+  std::string authToken;
+  std::vector<std::string> friends;
 };
 
 const Account accounts[] = {
@@ -23,19 +23,28 @@ const Account accounts[] = {
     },
 };
 
+class Controller;
+std::shared_ptr<Controller> controller_ptr;
+
+bool is_menu_closed = false;
+bool is_game_active = false;
+bool is_offline_bot = false;
 uint8_t wifi = 0;
-uint8_t brightness = 0;
-uint8_t statusBar = 0b00000010;
+uint8_t brightness = 10;
+uint8_t status_bar = 0b00000010;
 
-uint16_t accountSelection = 0;
-uint16_t lichessChallengeSelection = 0;
-uint16_t lichessGameSelection = 0;
-uint16_t lichessFriendSelection = 0;
+uint16_t account_selection = 0;
+uint16_t challenge_selection = 0;
+uint16_t game_selection = 0;
+uint16_t friend_selection = 0;
 
+uint8_t bot_level = 1;
 
-uint16_t accounts_get_cnt(void *data) {
+uint16_t accounts_get_cnt(void *data)
+{
   return 2;
 }
-const char *accounts_get_str(void *data, uint16_t index) {
+const char *accounts_get_str(void *data, uint16_t index)
+{
   return accounts[index].name.c_str();
 }

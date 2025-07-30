@@ -12,6 +12,10 @@ public:
     {
         return sf::Color(r, g, b);
     }
+    sf::Color toSFMLColor(uint8_t brightness)
+    {
+        return sf::Color(r * brightness / 10, g * brightness / 10, b * brightness / 10);
+    }
     bool operator==(Color a) const
     {
         if (a.r == r && a.g == g && a.b == b)

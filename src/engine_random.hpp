@@ -8,7 +8,7 @@ private:
     std::mt19937 rng{std::random_device{}()};
     chess::Board board;
 
-    void makeEngineMove() override
+    void makeEngineMove()
     {
         if (board.sideToMove() != color)
         {
@@ -25,11 +25,13 @@ private:
         if (moveHandler)
         {
             board.makeMove(moves[index]);
-            moveHandler(moves[index]);
+            std::string move_uci = chess::uci::moveToUci(moves[index]);
+            moveHandler(move_uci);
         }
     }
 
 public:
+    EngineRandom(chess::Color color, std::string fen) : Engine(color), board(fen) {}
     void makeMove(chess::Move move) override
     {
         board.makeMove(move);
@@ -39,5 +41,10 @@ public:
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 makeEngineMove(); })
             .detach();
+    }
+    void start() override {
+        if (board.sideToMove() == color) {
+            makeEngineMove();
+        }
     }
 };

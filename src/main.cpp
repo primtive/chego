@@ -1,6 +1,6 @@
 #include <memory>
 #include <iostream>
-
+#include "globals.hpp"
 #include "controller.hpp"
 #include <SFML/Graphics.hpp>
 #include "menu.hpp"
@@ -25,7 +25,7 @@ int main()
             switch (event->getIf<sf::Event::KeyPressed>()->scancode)
             {
             case sf::Keyboard::Scancode::Q:
-                statusBar |= BOARD_TYPE_BIT;
+                status_bar |= BOARD_TYPE_BIT;
                 menu->draw();
                 break;
             case sf::Keyboard::Scancode::W:

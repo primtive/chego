@@ -1,10 +1,8 @@
 #pragma once
 #include "engine.hpp"
 #include "chess.hpp"
-#include "lichess.hpp"
+#include "network.hpp"
 #include <string>
-#include <cpr/cpr.h>
-#include <chrono>
 #include <thread>
 #include <iostream>
 
@@ -26,8 +24,7 @@ private:
         session.SetUrl(cpr::Url{"https://lichess.org/api/board/game/stream/" + gameId});
         session.SetHeader(cpr::Header{
             {"Accept", "application/x-ndjson"},
-            {"Authorization", lichess::getAuthStr()} // Замените на реальный токен
-        });
+            {"Authorization", getAuthStr()}});
         session.SetWriteCallback(cpr::WriteCallback{write});
         cpr::Response response = session.Get();
 
@@ -48,7 +45,7 @@ public:
     }
     void makeMove(chess::Move move) override
     {
-        lichess::apiPost("board/game/" + gameId + "/move/" + chess::uci::moveToUci(move));
+        apiPost("board/game/" + gameId + "/move/" + chess::uci::moveToUci(move));
     }
     void start() override
     {

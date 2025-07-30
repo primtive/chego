@@ -1,29 +1,25 @@
 #pragma once
 
-#include <string>
-#include <iostream>
-#include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
 #include "globals.hpp"
+#include "network.hpp"
 
 using nlohmann::json;
-using std::string;
 
 namespace lichess
 {
     struct Game
     {
-        // Game(string id, string opponent, string fen, bool isEngineWhite) : id(id), opponent(opponent), isEngineWhite(isEngineWhite), fen(fen) {}
-        string id;
-        string name;
-        string fen;
+        std::string id;
+        std::string name;
+        std::string fen;
         bool isEngineWhite;
     };
 
     struct Challenge
     {
-        string id;
-        string name;
+        std::string id;
+        std::string name;
     };
     template <typename T>
     struct MUIList : public std::vector<T>
@@ -40,8 +36,6 @@ namespace lichess
         }
     };
 
-    static const string baseApi = "https://lichess.org/api/";
-
     MUIList<Game> games{};
     MUIList<Challenge> challenges{};
 
@@ -53,60 +47,13 @@ namespace lichess
 
     uint16_t friends_get_cnt(void *data)
     {
-        return accounts[accountSelection].friends.size();
+        return accounts[account_selection].friends.size();
     }
     const char *friends_get_str(void *data, uint16_t index)
     {
-        if (index > accounts[accountSelection].friends.size() - 1)
+        if (index > accounts[account_selection].friends.size() - 1)
             return "\0";
-        return accounts[accountSelection].friends[index].c_str();
-    }
-
-    auto getAuthStr()
-    {
-        return "Bearer " + accounts[accountSelection].authToken;
-    }
-
-    json apiPost(string path)
-    {
-        string url = baseApi + path;
-
-        // Отправляем POST-запрос с заголовком авторизации
-        cpr::Response response = cpr::Post(
-            cpr::Url{url},
-            cpr::Header{
-                {"Authorization", getAuthStr()},
-                // {"Content-Type", "application/json"},
-            });
-
-        if (response.status_code == 200)
-        {
-            return json::parse(response.text);
-        }
-        else
-        {
-            std::cerr << "Response: " << response.text << std::endl;
-            return "err";
-        }
-    }
-
-    json apiGet(string path)
-    {
-        string url = baseApi + path;
-
-        cpr::Response response = cpr::Get(
-            cpr::Url{url},
-            cpr::Header{{"Authorization", getAuthStr()}});
-
-        std::cout << "Response: " << response.text << std::endl;
-        if (response.status_code == 200)
-        {
-            return json::parse(response.text);
-        }
-        else
-        {
-            return "err";
-        }
+        return accounts[account_selection].friends[index].c_str();
     }
 
     void fetch_challenges()
@@ -118,7 +65,7 @@ namespace lichess
             challenges.push_back(
                 Challenge{
                     challenge["id"],
-                    challenge["challenger"]["id"].get<string>(),
+                    challenge["challenger"]["id"].get<std::string>(),
                 });
         }
     }
@@ -132,9 +79,9 @@ namespace lichess
             games.push_back(
                 Game{
                     game["gameId"],
-                    game["opponent"]["username"].get<string>(),
+                    game["opponent"]["username"].get<std::string>(),
                     game["fen"],
-                    game["color"].get<string>() != "white", // Для engine наоборот
+                    game["color"].get<std::string>() != "white", // Для engine наоборот
                 });
         }
     }

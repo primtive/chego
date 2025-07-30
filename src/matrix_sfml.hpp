@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include "globals.hpp"
 
 using namespace std::chrono_literals;
 
@@ -36,6 +37,7 @@ public:
     void display();
     void displayWithAnim(leds_t _leds);
     void fill(Color color);
+    void updateBrightness();
 
     void poll();
 };
@@ -65,7 +67,7 @@ void SFMLMatrix::display()
                     led.setPosition(sf::Vector2f(
                         blockPosX + inX * PIXEL_SIZE,
                         blockPosY + inY * PIXEL_SIZE));
-                    led.setFillColor(leds[y][x].toSFMLColor());
+                    led.setFillColor(leds[y][x].toSFMLColor(brightness));
 
                     // Скругление углов
                     led.setOutlineThickness(0);

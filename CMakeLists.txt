@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.23)
 project(chego)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -20,8 +20,8 @@ file(GLOB U8G2_SOURCES
     ${PIO_LIB_DIR}/U8g2/src/clib/*.c
 )
 
+cmake_policy(SET CMP0135 NEW)
 include(FetchContent)
-
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
